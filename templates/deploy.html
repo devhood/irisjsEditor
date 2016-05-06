@@ -1,0 +1,52 @@
+
+<script src="/modules/irisjsEditor/jquery.colorbox-min.js"></script>
+<link rel="stylesheet" href="/modules/irisjsEditor/colorbox.css" />
+<link rel="stylesheet" href="/modules/irisjsEditor/style.css" />
+
+<script>
+  $(function () {
+
+    $('#checkout-live, #merge, #fetch').click(function (e) {
+
+      e.preventDefault();
+      $.colorbox({href: $(this).attr('href')});
+
+    });
+  });
+</script>
+[[[form empty]]]
+<div class="page-wide">
+  <ul class="nav nav-tabs">
+    <li role="presentation"><a href="/irisjs-editor/editor">Development</a></li>
+    <li role="presentation" class="active"><a href="/irisjs-editor/deploy">Deployment</a></li>
+  </ul>
+
+  <nav class="navbar navbar-default">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#"><img src="/modules/irisjsEditor/images/favicon.png" /></a>
+      </div>
+
+      <!-- Single button -->
+      <div class="btn-group navbar-form navbar-left">
+        <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Action <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+          <li><a id="fetch" href="/irisjs-editor/fetch-all/live">Fetch all</a></li>
+          <li><a id="merge" href="/irisjs-editor/merge/live">Merge</a></li>
+          <li><a id="checkout-live" href="/irisjs-editor/checkout-branch/live">Checkout branch</a></li>
+        </ul>
+      </div>
+      <p class="navbar-text">[[[currentBranch full,{"target":"live"}]]]</p>
+    </div><!-- /.container-fluid -->
+  </nav>
+
+</div>

@@ -1,0 +1,289 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+<script src="/modules/forms/jsonform/deps/opt/ace/ace.js"></script>
+<script src="/modules/forms/jsonform/deps/opt/ace/mode-javascript.js"></script>
+<script src="/modules/forms/jsonform/deps/opt/ace/mode-json.js"></script>
+<script src="/modules/forms/jsonform/deps/opt/ace/mode-css.js"></script>
+<script src="/modules/forms/jsonform/deps/opt/ace/mode-html.js"></script>
+<script src="/modules/forms/jsonform/deps/opt/ace/mode-markdown.js"></script>
+<script src="/modules/forms/jsonform/deps/opt/ace/theme-twilight.js"></script>
+
+<script src="/modules/irisjsEditor/jquery.colorbox-min.js"></script>
+<link rel="stylesheet" href="/modules/irisjsEditor/colorbox.css" />
+<link rel="stylesheet" href="/modules/irisjsEditor/style.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+
+<div class="page-wide">
+<ul class="nav nav-tabs">
+  <li role="presentation" class="active"><a href="/irisjs-editor/editor">Development</a></li>
+  <li role="presentation"><a href="/irisjs-editor/deploy">Deployment</a></li>
+</ul>
+
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#"><img src="/modules/irisjsEditor/images/favicon.png" /></a>
+    </div>
+
+
+    <div class="navbar-form navbar-left">[[[form chooseBranch,{"target": "dev"}]]]</div>
+
+    <!-- Single button -->
+    <div class="btn-group navbar-form navbar-left">
+      <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Action <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+        <li><a id="create-branch" href="/irisjs-editor/create-branch">Create branch</a></li>
+        <li><a id="commit-changes" href="/irisjs-editor/commit-changes">Commit changes</a></li>
+        <li><a id="fetch" href="/irisjs-editor/fetch-all/dev">Fetch all</a></li>
+        <li><a id="merge" href="/irisjs-editor/merge/dev">Merge</a></li>
+        <li role="separator" class="divider"></li>
+        <li><a id="push" href="/irisjs-editor/push">Push</a></li>
+      </ul>
+    </div>
+    <p class="navbar-text">[[[currentBranch commit,{"target":"dev"]]]</p>
+  </div><!-- /.container-fluid -->
+</nav>
+
+<div>
+
+</div>
+
+  <!-- 3 setup a container element -->
+  <div id="container" role="main">
+    <div id="tree"></div>
+    <div id="data">
+      <div class="content code" >[[[form codeEditor]]]</div>
+      <div class="content folder" style="display:none;"></div>
+      <div class="content image" style="display:none; position:relative;"><img src="" alt="" style="display:block; position:absolute; left:50%; top:50%; padding:0; max-height:90%; max-width:90%;"/>
+      </div>
+
+    </div>
+  </div>
+
+<!-- 5 include the minified jstree source -->
+
+<script>
+  $(function () {
+
+    $('#commit-changes, #push, #create-branch, #merge, #fetch').click(function(e) {
+
+      e.preventDefault();
+      $.colorbox({href: $(this).attr('href')});
+
+    });
+
+    $(window).resize(function () {
+      var h = Math.max($(window).height() - 0, 420);
+      $('#container, #data, #tree, #data .content').height(h).filter('.default').css('lineHeight', h + 'px');
+    }).resize();
+
+    var processTree = function(node) {
+
+      var parent = $(node).parents('.jstree-node');
+      if (parent.hasClass('jstree-leaf')) {
+        parent = parent.parents('.jstree-node');
+      }
+      $.each(parent, function(index, item) {
+
+        $(item).children('a.jstree-anchor').addClass('modified');
+
+      });
+
+
+    }
+
+    // 6 create an instance when the DOM is ready
+    $('#tree')
+        .bind('ready.jstree', function(e, data) {
+          // invoked after jstree has loaded
+          setTimeout(function() {
+
+            $.each($('#tree .modified'), function(index, node) {
+
+              processTree(node);
+
+            });
+
+          },200);
+
+        })
+        .jstree({
+          'core': {
+            'data': {{{json tree}}},
+            'check_callback': function (o, n, p, i, m) {
+              if (m && m.dnd && m.pos !== 'i') {
+                return false;
+              }
+              if (o === "move_node" || o === "copy_node") {
+                if (this.get_node(n).parent === this.get_node(p).id) {
+                  return false;
+                }
+              }
+              return true;
+            },
+            'force_text': true,
+            'themes': {
+              'responsive': false,
+              'variant': 'small',
+              'stripes': true
+            }
+          },
+          'sort': function (a, b) {
+            return this.get_type(a) === this.get_type(b) ? (this.get_text(a) > this.get_text(b) ? 1 : -1) : (this.get_type(a) >= this.get_type(b) ? 1 : -1);
+          },
+          'contextmenu': {
+            'items': function (node) {
+              var tmp = $.jstree.defaults.contextmenu.items();
+              delete tmp.create.action;
+              tmp.create.label = "New";
+              tmp.create.submenu = {
+                "create_folder": {
+                  "separator_after": true,
+                  "label": "Folder",
+                  "action": function (data) {
+                    var inst = $.jstree.reference(data.reference),
+                        obj = inst.get_node(data.reference);
+                    inst.create_node(obj, {type: "default"}, "last", function (new_node) {
+                      setTimeout(function () {
+                        inst.edit(new_node);
+                      }, 0);
+                    });
+                  }
+                },
+                "create_file": {
+                  "label": "File",
+                  "action": function (data) {
+                    var inst = $.jstree.reference(data.reference),
+                        obj = inst.get_node(data.reference);
+                    inst.create_node(obj, {type: "file"}, "last", function (new_node) {
+                      setTimeout(function () {
+                        inst.edit(new_node);
+                      }, 0);
+                    });
+                  }
+                }
+              };
+              if (this.get_type(node) === "file") {
+                delete tmp.create;
+              }
+              return tmp;
+            }
+          },
+          'types': {
+            'default': {
+              'icon': 'folder'
+            },
+            'file': {
+              'valid_children': [],
+              'icon': 'file'
+            }
+          },
+          'unique': {
+            'duplicate': function (name, counter) {
+              return name + ' ' + counter;
+            }
+          },
+          'plugins': ['state', 'dnd', 'sort', 'types', 'contextmenu', 'unique']
+        })
+        .on('delete_node.jstree', function (e, data) {
+          $.get('?operation=delete_node', {'id': data.node.id}).fail(function () {
+            data.instance.refresh();
+          });
+        })
+        .on('create_node.jstree', function (e, data) {
+          $.get('?operation=create_node', {'type': data.node.type, 'id': data.node.parent, 'text': data.node.text})
+              .done(function (d) {
+                data.instance.set_id(data.node, d.id);
+              })
+              .fail(function () {
+                data.instance.refresh();
+              });
+        })
+        .on('rename_node.jstree', function (e, data) {
+          $.get('?operation=rename_node', {'id': data.node.id, 'text': data.text})
+              .done(function (d) {
+                data.instance.set_id(data.node, d.id);
+              })
+              .fail(function () {
+                data.instance.refresh();
+              });
+        })
+        .on('move_node.jstree', function (e, data) {
+          $.get('?operation=move_node', {'id': data.node.id, 'parent': data.parent})
+              .done(function (d) {
+                //data.instance.load_node(data.parent);
+                data.instance.refresh();
+              })
+              .fail(function () {
+                data.instance.refresh();
+              });
+        })
+        .on('copy_node.jstree', function (e, data) {
+          $.get('?operation=copy_node', {'id': data.original.id, 'parent': data.parent})
+              .done(function (d) {
+                //data.instance.load_node(data.parent);
+                data.instance.refresh();
+              })
+              .fail(function () {
+                data.instance.refresh();
+              });
+        })
+        .on('changed.jstree', function (e, data) {
+          if (data && data.selected && data.selected.length) {
+
+            if (window.location.search.indexOf(data.selected[0]) < 0) {
+              window.location = window.location.protocol + '//' + window.location.host + window.location.pathname + "?path=" + data.selected[0];
+            }
+
+            /*$.get('?operation=get_content&id=' + data.selected.join(':'), function (d) {
+              if (d && typeof d.type !== 'undefined') {
+                $('#data .content').hide();
+                switch (d.type) {
+                  case 'text':
+                  case 'txt':
+                  case 'md':
+                  case 'htaccess':
+                  case 'log':
+                  case 'sql':
+                  case 'php':
+                  case 'js':
+                  case 'json':
+                  case 'css':
+                  case 'html':
+                    $('#data .code').show();
+                    $('#code').val(d.content);
+                    break;
+                  case 'png':
+                  case 'jpg':
+                  case 'jpeg':
+                  case 'bmp':
+                  case 'gif':
+                    $('#data .image img').one('load', function () {
+                      $(this).css({
+                        'marginTop': '-' + $(this).height() / 2 + 'px',
+                        'marginLeft': '-' + $(this).width() / 2 + 'px'
+                      });
+                    }).attr('src', d.content);
+                    $('#data .image').show();
+                    break;
+                  default:
+                    $('#data .default').html(d.content).show();
+                    break;
+                }
+              }
+            });*/
+          }
+          else {
+          }
+        });
+  });
+</script>
+</div>

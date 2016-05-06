@@ -1,0 +1,14 @@
+{
+  "name": "irisjs-editor",
+  "version": "1.0.0",
+  "description": "Online version-controlled IDE code editing for IrisJS",
+  "main": "irisjsEditor.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "cityweb.adam",
+  "license": "ISC",
+  "dependencies": {
+    "nodegit": "^0.12.2"
+  }
+}

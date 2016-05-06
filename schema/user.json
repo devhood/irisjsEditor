@@ -1,0 +1,11 @@
+{
+  "fields": {
+    "gitpath": {
+      "fieldType": "Textfield",
+      "label": "Git path",
+      "description": "Path to cloned repository",
+      "permissions": [],
+      "unique": true
+    }
+  }
+}
