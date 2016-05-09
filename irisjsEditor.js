@@ -612,8 +612,69 @@ iris.modules.irisjsEditor.globals.popupSubmit = function (errors, values) {
   });
 };
 
-iris.modules.irisjsEditor.registerHook("hook_module_install", 0, function (thisHook, data) {
+iris.modules.irisjsEditor.registerHook("hook_restart_receive", 0, function (thisHook, data) {
 
-  var pi = 3;
+  if (data.enabledModules && data.enabledModules.indexOf('irisjsEditor') > -1) {
+
+    // Fetch current schema
+    var schema = JSON.parse(JSON.stringify(iris.dbSchemaConfig['user']));
+
+    if (Object.keys(schema.fields).indexOf('git') <= 0) {
+
+      schema.fields.git = {
+        "description": "", //TODO: Add description to field
+        "fieldType": "Fieldset",
+        "label": "Git",
+        "permissions": [],
+        "unique": false,
+        "subfields": {
+          "gitpath": {
+            "description": "Path to the respository of this git project",
+            "fieldType": "Textfield",
+            "label": "Git path",
+            "machineName": "gitpath",
+            "permissions": [],
+            "required": false,
+            "unique": false
+          },
+          "signature_email": {
+            "description": "Email used for signing commits",
+            "fieldType": "Textfield",
+            "label": "Signture email",
+            "machineName": "signature_email",
+            "permissions": [],
+            "required": false,
+            "unique": false
+          },
+          "signature_name": {
+            "description": "Username used for signing commits",
+            "fieldType": "Textfield",
+            "label": "Signature name",
+            "machineName": "signature_name",
+            "permissions": [],
+            "required": false,
+            "unique": false
+          }
+        }
+      }
+
+      // Save updated schema.
+      iris.saveConfig(schema, "entity", 'user', function (data) {
+
+        iris.dbPopulate();
+        iris.message(thisHook.authPass.userid, thisHook.authPass.t("Added git fields to user entity"), "success");
+        thisHook.pass(data);
+
+      });
+
+    }
+    else {
+      thisHook.pass(data);
+    }
+
+  }
+  else {
+    thisHook.pass(data);
+  }
 
 });
