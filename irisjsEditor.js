@@ -33,6 +33,8 @@ var routes = {
 iris.route.get("/irisjs-editor/deploy", routes.deploy, function (req, res) {
 
   // Deploy changes to live.
+
+  try{
   iris.modules.frontend.globals.parseTemplateFile(["deploy"], ['html'], {
     'current': req.irisRoute.options,
   }, req.authPass, req).then(function (success) {
@@ -46,6 +48,10 @@ iris.route.get("/irisjs-editor/deploy", routes.deploy, function (req, res) {
     iris.log("error", fail);
 
   });
+  }
+  catch(e){
+    console.log(e);
+  }
 
 });
 
@@ -103,12 +109,13 @@ iris.route.get("/irisjs-editor/editor", routes.editor, function (req, res) {
   var cloneRepo = function() {
 
     var path = iris.sitePath;
+    
     nodegit.Repository.open(path).then(function (repo) {
 
       repo.getRemote('origin', function () {}).then(function (remote) {
 
         var url = remote.url();
-
+        
         iris.modules.frontend.globals.parseTemplateFile(["cloneRepo"], ['html'], {
           'current': req.irisRoute.options,
           'url' : url
@@ -125,14 +132,26 @@ iris.route.get("/irisjs-editor/editor", routes.editor, function (req, res) {
         });
 
       });
+    },function(err){
+        
+       iris.log("error", err);
     });
 
   }
 
-  iris.dbCollections['user'].find({'eid': req.authPass.userid}).exec(function (err, docs) {
+  var userQuery = {
+    entities: ['user'],
+      queries: [{
+        field: 'eid',
+        operator: 'IS',
+        value: req.authPass.userid
+      }]
+  };
+    
+  iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
 
-    if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
-
+    if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath) {
+                 
       cloneRepo();
       return;
 
@@ -176,8 +195,57 @@ iris.route.get("/irisjs-editor/editor", routes.editor, function (req, res) {
 
 
     }
-
   });
+  
+  // iris.dbCollections['user'].find({'eid': req.authPass.userid}).exec(function (err, docs) {
+
+  //   if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
+
+  //     cloneRepo();
+  //     return;
+
+  //   }
+  //   else {
+
+  //     var path = docs[0].git[0].gitpath;
+
+  //     // Check filesystem exists
+  //     try {
+  //       fs.accessSync(path, fs.F_OK);
+  //     } catch (e) {
+  //       cloneRepo();
+  //       return;
+  //     }
+
+  //       nodegit.Repository.open(path).then(function (repo) {
+
+  //         var tree = iris.modules.irisjsEditor.globals.getFilesRecursive(path, repo, path);
+
+  //         iris.modules.frontend.globals.parseTemplateFile(["fileBrowser"], ['html'], {
+  //           'current': req.irisRoute.options,
+  //           'tree': tree,
+  //         }, req.authPass, req).then(function (success) {
+
+  //           res.send(success);
+
+  //         }, function (fail) {
+
+  //           iris.modules.frontend.globals.displayErrorPage(500, req, res);
+
+  //           iris.log("error", fail);
+
+  //         });
+
+  //       }, function(fail) {
+
+  //         iris.log("error", fail);
+
+  //       });
+
+
+  //   }
+
+  // });
 
 
 });
@@ -224,9 +292,17 @@ iris.modules.irisjsEditor.globals.checkoutBranch = function (params, req, callba
 
   }
   else {
-    iris.dbCollections['user'].find({'eid': req.authPass.userid}).exec(function (err, docs) {
-
-      if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
+    var userQuery = {
+      entities: ['user'],
+        queries: [{
+          field: 'eid',
+          operator: 'IS',
+          value: req.authPass.userid
+        }]
+    };
+                     
+    iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
+      if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath) {
 
         callback(false, 'no gitpath');
 
@@ -237,6 +313,20 @@ iris.modules.irisjsEditor.globals.checkoutBranch = function (params, req, callba
 
       }
     });
+    
+    // iris.dbCollections['user'].find({'eid': req.authPass.userid}).exec(function (err, docs) {
+
+    //   if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
+
+    //     callback(false, 'no gitpath');
+
+    //   }
+    //   else {
+
+    //     iris.modules.irisjsEditor.globals.executeCheckoutBranch(docs[0].git[0].gitpath, params, callback);
+
+    //   }
+    // });
   }
 }
 
@@ -449,9 +539,18 @@ iris.modules.frontend.registerHook("hook_frontend_embed__currentBranch", 0, func
   }
   else {
 
-    iris.dbCollections['user'].find({'eid': thisHook.authPass.userid}).exec(function (err, docs) {
-
-      if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
+    var userQuery = {
+      entities: ['user'],
+        queries: [{
+          field: 'eid',
+          operator: 'IS',
+          value: req.authPass.userid
+        }]
+    };
+                     
+    iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
+      
+      if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath) {
 
         iris.message(thisHook.authPass.userid, "No git path available", "danger");
         thisHook.pass('');
@@ -463,6 +562,20 @@ iris.modules.frontend.registerHook("hook_frontend_embed__currentBranch", 0, func
 
       }
     });
+    // iris.dbCollections['user'].find({'eid': thisHook.authPass.userid}).exec(function (err, docs) {
+
+    //   if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
+
+    //     iris.message(thisHook.authPass.userid, "No git path available", "danger");
+    //     thisHook.pass('');
+
+    //   }
+    //   else {
+
+    //     iris.modules.irisjsEditor.globals.getCurrentBranch(docs[0].git[0].gitpath, thisHook, data);
+
+    //   }
+    // });
 
   }
 
@@ -514,7 +627,7 @@ iris.modules.irisjsEditor.globals.cloneRepo = function (params, req, callback) {
       callback(true, repo.workdir());
 
     }).catch(function (err) {
-      console.log(err);
+
       callback(false);
     });
 
@@ -612,13 +725,12 @@ iris.modules.irisjsEditor.globals.popupSubmit = function (errors, values) {
   });
 };
 
-iris.modules.irisjsEditor.registerHook("hook_restart_receive", 0, function (thisHook, data) {
-
-  if (data.enabledModules && data.enabledModules.indexOf('irisjsEditor') > -1) {
-
-    // Fetch current schema
-    var schema = JSON.parse(JSON.stringify(iris.dbSchemaConfig['user']));
-
+process.on("dbReady", function(){
+  
+  if (iris.modules.irisjsEditor) {
+    
+    var schema = iris.entityTypes['user'];
+    
     if (Object.keys(schema.fields).indexOf('git') <= 0) {
 
       schema.fields.git = {
@@ -661,20 +773,77 @@ iris.modules.irisjsEditor.registerHook("hook_restart_receive", 0, function (this
       // Save updated schema.
       iris.saveConfig(schema, "entity", 'user', function (data) {
 
-        iris.dbPopulate();
-        iris.message(thisHook.authPass.userid, thisHook.authPass.t("Added git fields to user entity"), "success");
-        thisHook.pass(data);
-
+       // iris.message(thisHook.authPass.userid, thisHook.authPass.t("Added git fields to user entity"), "success");
+        
       });
 
     }
-    else {
-      thisHook.pass(data);
-    }
-
-  }
-  else {
-    thisHook.pass(data);
   }
 
 });
+// iris.modules.irisjsEditor.registerHook("hook_restart_receive", 0, function (thisHook, data) {
+
+//   if (data.enabledModules && data.enabledModules.indexOf('irisjsEditor') > -1) {
+
+//     // Fetch current schema
+//     var schema = JSON.parse(JSON.stringify(iris.dbSchemaConfig['user']));
+
+//     if (Object.keys(schema.fields).indexOf('git') <= 0) {
+
+//       schema.fields.git = {
+//         "description": "", //TODO: Add description to field
+//         "fieldType": "Fieldset",
+//         "label": "Git",
+//         "permissions": [],
+//         "unique": false,
+//         "subfields": {
+//           "gitpath": {
+//             "description": "Path to the respository of this git project",
+//             "fieldType": "Textfield",
+//             "label": "Git path",
+//             "machineName": "gitpath",
+//             "permissions": [],
+//             "required": false,
+//             "unique": false
+//           },
+//           "signature_email": {
+//             "description": "Email used for signing commits",
+//             "fieldType": "Textfield",
+//             "label": "Signture email",
+//             "machineName": "signature_email",
+//             "permissions": [],
+//             "required": false,
+//             "unique": false
+//           },
+//           "signature_name": {
+//             "description": "Username used for signing commits",
+//             "fieldType": "Textfield",
+//             "label": "Signature name",
+//             "machineName": "signature_name",
+//             "permissions": [],
+//             "required": false,
+//             "unique": false
+//           }
+//         }
+//       }
+
+//       // Save updated schema.
+//       iris.saveConfig(schema, "entity", 'user', function (data) {
+
+//         iris.dbPopulate();
+//         iris.message(thisHook.authPass.userid, thisHook.authPass.t("Added git fields to user entity"), "success");
+//         thisHook.pass(data);
+
+//       });
+
+//     }
+//     else {
+//       thisHook.pass(data);
+//     }
+
+//   }
+//   else {
+//     thisHook.pass(data);
+//   }
+
+// });

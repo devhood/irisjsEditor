@@ -1,14 +1,69 @@
 {
-  "name": "irisjs-editor",
-  "version": "1.0.0",
+  "_args": [
+    [
+      "irisjs-editor",
+      "/home/ubuntu/workspace"
+    ]
+  ],
+  "_from": "irisjs-editor@*",
+  "_id": "irisjs-editor@1.0.1",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/irisjs-editor",
+  "_nodeVersion": "5.0.0",
+  "_npmOperationalInternal": {
+    "host": "packages-16-east.internal.npmjs.com",
+    "tmp": "tmp/irisjs-editor-1.0.1.tgz_1462826923395_0.6456026879604906"
+  },
+  "_npmUser": {
+    "email": "adam@citywebconsultants.co.uk",
+    "name": "cityweb.adam"
+  },
+  "_npmVersion": "3.8.3",
+  "_phantomChildren": {},
+  "_requested": {
+    "name": "irisjs-editor",
+    "raw": "irisjs-editor",
+    "rawSpec": "",
+    "scope": null,
+    "spec": "*",
+    "type": "range"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/irisjs-editor/-/irisjs-editor-1.0.1.tgz",
+  "_shasum": "9696c4557d60f09803eab3e8cc546d8d685d7ec2",
+  "_shrinkwrap": null,
+  "_spec": "irisjs-editor",
+  "_where": "/home/ubuntu/workspace",
+  "author": {
+    "name": "cityweb.adam"
+  },
+  "dependencies": {
+    "nodegit": "^0.12.2"
+  },
   "description": "Online version-controlled IDE code editing for IrisJS",
+  "devDependencies": {},
+  "directories": {},
+  "dist": {
+    "shasum": "9696c4557d60f09803eab3e8cc546d8d685d7ec2",
+    "tarball": "https://registry.npmjs.org/irisjs-editor/-/irisjs-editor-1.0.1.tgz"
+  },
+  "gitHead": "5e277e27d3e9f7a3c9f72db32c83bc0d34deecb4",
+  "license": "ISC",
   "main": "irisjsEditor.js",
+  "maintainers": [
+    {
+      "name": "cityweb.adam",
+      "email": "adam@citywebconsultants.co.uk"
+    }
+  ],
+  "name": "irisjs-editor",
+  "optionalDependencies": {},
+  "readme": "ERROR: No README data found!",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "cityweb.adam",
-  "license": "ISC",
-  "dependencies": {
-    "nodegit": "^0.12.2"
-  }
+  "version": "1.0.1"
 }

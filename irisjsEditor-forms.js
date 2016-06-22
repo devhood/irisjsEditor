@@ -100,47 +100,55 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__createBranch", 0, func
 
 iris.modules.irisjsEditor.registerHook("hook_form_submit__createBranch", 0, function (thisHook, data) {
 
-  iris.dbCollections['user'].find({'eid': thisHook.authPass.userid}).exec(function (err, docs) {
-
-    if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
-
-      data.errors.push({
-        "message" : "No git path available"
-      });
-      thisHook.pass(data);
-
-    }
-    else {
-
-      nodegit.Repository.open(docs[0].git[0].gitpath).then(function (repo) {
-
-        repo.getCurrentBranch().then(function (ref) {
-
-          repo.getBranchCommit(ref.shorthand()).then(function (commit) {
-
-            nodegit.Branch.create(repo, thisHook.context.params.name, commit, 0).then(function (reference) {
-
-              data.messages.push({
-                "message": "Branch created"
-              });
-              thisHook.pass(data);
-
-            });
-
-          });
-
-        });
-
-      }).catch(function (err) {
-
+    var userQuery = {
+      entities: ['user'],
+        queries: [{
+          field: 'eid',
+          operator: 'IS',
+          value: thisHook.authPass.userid
+        }]
+    };
+          
+    iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
+      if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath) {
+  
         data.errors.push({
-          "message" : "Error creating branch"
+          "message" : "No git path available"
         });
         thisHook.pass(data);
-
-      });
-    }
-  });
+  
+      }
+      else {
+  
+        nodegit.Repository.open(docs[0].git[0].gitpath).then(function (repo) {
+  
+          repo.getCurrentBranch().then(function (ref) {
+  
+            repo.getBranchCommit(ref.shorthand()).then(function (commit) {
+  
+              nodegit.Branch.create(repo, thisHook.context.params.name, commit, 0).then(function (reference) {
+  
+                data.messages.push({
+                  "message": "Branch created"
+                });
+                thisHook.pass(data);
+  
+              });
+  
+            });
+  
+          });
+  
+        }).catch(function (err) {
+  
+          data.errors.push({
+            "message" : "Error creating branch"
+          });
+          thisHook.pass(data);
+  
+        });
+      }
+    });
 
 });
 
@@ -153,9 +161,17 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__chooseBranch", 0, func
   }
   else {
 
-    iris.dbCollections['user'].find({'eid': thisHook.authPass.userid}).exec(function (err, docs) {
-
-      if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
+    var userQuery = {
+      entities: ['user'],
+        queries: [{
+          field: 'eid',
+          operator: 'IS',
+          value: thisHook.authPass.userid
+        }]
+    };
+          
+    iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
+      if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath ) {
 
         iris.message(thisHook.authPass.userid, err, "danger");
         thisHook.fail(data);
@@ -166,7 +182,6 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__chooseBranch", 0, func
         iris.modules.irisjsEditor.globals.chooseBranchForm(docs[0].git[0].gitpath, thisHook, data);
 
       }
-
     });
 
   }
@@ -299,31 +314,40 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__cloneRepo", 0, functio
 
   var path = iris.sitePath;
 
-  iris.dbCollections['user'].find({'eid': thisHook.authPass.userid}).exec(function (err, docs) {
-
+  var userQuery = {
+    entities: ['user'],
+      queries: [{
+        field: 'eid',
+        operator: 'IS',
+        value: thisHook.authPass.userid
+      }]
+  };
+        
+  iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
+    
     nodegit.Repository.open(path).then(function (repo) {
-
+      
       repo.getRemote('origin', function () {}).then(function (remote) {
         // Use remote
 
 
-
+  
         iris.modules.irisjsEditor.globals.cloneForm(data, remote);
 
-        if (docs.length == 0 || !docs[0].git[0].signature_name || !docs[0].git[0].signature_email || err) {
+        if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].signature_name || !docs[0].git[0].signature_email) {
 
-          data.schema.sig_username = {
-            "type" : "text",
-            "title" : "Signature username"
-          };
-
-          data.schema.sig_email = {
-            "type" : "text",
-            "title" : "Signature email"
-          };
-
-          data.form.unshift('sig_email');
-          data.form.unshift('sig_username');
+              data.schema.sig_username = {
+                "type" : "text",
+                "title" : "Signature username"
+              };
+    
+              data.schema.sig_email = {
+                "type" : "text",
+                "title" : "Signature email"
+              };
+    
+              data.form.unshift('sig_email');
+              data.form.unshift('sig_username');
 
         }
 
@@ -334,14 +358,10 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__cloneRepo", 0, functio
     }).catch(function (err) {
 
       iris.log("error", err);
+
       thisHook.fail(data);
 
-    }).done(function () {
-
-      console.log('Finished');
-
     });
-
   });
 
 });
@@ -349,6 +369,7 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__cloneRepo", 0, functio
 iris.modules.irisjsEditor.registerHook("hook_form_submit__cloneRepo", 0, function (thisHook, data) {
 
   var params = thisHook.context.params;
+
   iris.modules.irisjsEditor.globals.cloneRepo(params, thisHook.context.req, function (success, path) {
 
     if (success) {
@@ -358,36 +379,38 @@ iris.modules.irisjsEditor.registerHook("hook_form_submit__cloneRepo", 0, functio
       }
 
       var update = {
-        'git.gitpath' : path
+        "entityType": "user",
+        'eid': thisHook.authPass.userid,
       };
+      
+      var git = {};
+      git.gitpath = path;
 
       if (params.sig_username) {
-        update['git.signature_name'] = params.sig_username;
+        git.signature_name = params.sig_username;
       }
-
+      
       if (params.sig_email) {
-        update['git.signature_email'] = params.sig_email;
+        git.signature_email = params.sig_email;
       }
-
-      iris.dbCollections['user'].update({'eid': thisHook.authPass.userid}, {'$set' : update}).exec(function (err, docs) {
-
-        if (!err) {
-          iris.message(thisHook.authPass.userid, "Repo successfully cloned for editing.", "info");
+      update.git = [git];
+      
+      
+      iris.invokeHook("hook_entity_edit", "root", null, update).then(function (docs) {
+    
+        iris.message(thisHook.authPass.userid, "Repo successfully cloned for editing.", "info");
           data.redirect = '/irisjs-editor/editor';
           thisHook.pass(data);
-        }
-        else {
-
-          data.errors.push({
+    
+      }, function (fail) {
+    
+        data.errors.push({
             "messages" : "Unable to user data to include the path of your git clone"
           });
 
           thisHook.pass(data);
-
-        }
-
+    
       });
-
 
     }
     else {
@@ -417,9 +440,16 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__commitChanges", 0, fun
 
 iris.modules.irisjsEditor.registerHook("hook_form_submit__commitChanges", 0, function (thisHook, data) {
 
-  iris.dbCollections['user'].find({'eid': thisHook.authPass.userid}).exec(function (err, docs) {
-
-    if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
+  var userQuery = {
+    entities: ['user'],
+      queries: [{
+        field: 'eid',
+        operator: 'IS',
+        value: thisHook.authPass.userid
+      }]
+  };
+  iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
+    if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath || err) {
 
       data.errors.push({
         "message" : "No git path available"
@@ -467,19 +497,26 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__merge", 0, function (t
   }
   else {
 
-    iris.dbCollections['user'].find({'eid': thisHook.authPass.userid}).exec(function (err, docs) {
+      var userQuery = {
+        entities: ['user'],
+          queries: [{
+            field: 'eid',
+            operator: 'IS',
+            value: thisHook.authPass.userid
+          }]
+      };
+      iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
+        if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath || err) {
 
-      if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
+          iris.message(thisHook.authPass.userid, err, "danger");
+          thisHook.fail(data);
 
-        iris.message(thisHook.authPass.userid, err, "danger");
-        thisHook.fail(data);
-
-      }
-      else {
-
-        iris.modules.irisjsEditor.globals.getMergeOptions(docs[0].git[0].gitpath, thisHook, data);
-
-      }
+        }
+        else {
+  
+          iris.modules.irisjsEditor.globals.getMergeOptions(docs[0].git[0].gitpath, thisHook, data);
+  
+        }
 
     });
 
@@ -543,9 +580,16 @@ iris.modules.irisjsEditor.globals.getMergeOptions = function(path, thisHook, dat
 
 iris.modules.irisjsEditor.registerHook("hook_form_submit__merge", 0, function (thisHook, data) {
 
-  iris.dbCollections['user'].find({'eid': thisHook.authPass.userid}).exec(function (err, docs) {
-
-    if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
+  var userQuery = {
+    entities: ['user'],
+    queries: [{
+      field: 'eid',
+      operator: 'IS',
+      value: thisHook.authPass.userid
+    }]
+  };
+  iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
+    if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath || err) {
 
       data.errors.push({
         "message": "No git path available"
@@ -570,6 +614,7 @@ iris.modules.irisjsEditor.registerHook("hook_form_submit__merge", 0, function (t
       });
     }
   });
+
   thisHook.pass(data);
 
 });
@@ -620,10 +665,16 @@ iris.modules.irisjsEditor.registerHook("hook_form_submit__fetchAll", 0, function
 
   }
   else {
-
-    iris.dbCollections['user'].find({'eid': thisHook.authPass.userid}).exec(function (err, docs) {
-
-      if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
+    var userQuery = {
+      entities: ['user'],
+      queries: [{
+        field: 'eid',
+        operator: 'IS',
+        value: thisHook.authPass.userid
+      }]
+    };
+    iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
+      if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath || err) {
 
       }
       else {
@@ -713,9 +764,16 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__push", 0, function (th
 
 iris.modules.irisjsEditor.registerHook("hook_form_submit__push", 0, function (thisHook, data) {
 
-  iris.dbCollections['user'].find({'eid': thisHook.authPass.userid}).exec(function (err, docs) {
-
-    if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
+    var userQuery = {
+      entities: ['user'],
+      queries: [{
+        field: 'eid',
+        operator: 'IS',
+        value: thisHook.authPass.userid
+      }]
+    };
+    iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
+      if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath || err) {
 
       data.errors.push({
         "message" : "No git path available"
