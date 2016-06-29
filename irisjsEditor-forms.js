@@ -173,7 +173,7 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__chooseBranch", 0, func
     iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
       if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath ) {
 
-        iris.message(thisHook.authPass.userid, err, "danger");
+        iris.message(thisHook.authPass.userid, "danger");
         thisHook.fail(data);
 
       }
@@ -449,7 +449,7 @@ iris.modules.irisjsEditor.registerHook("hook_form_submit__commitChanges", 0, fun
       }]
   };
   iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
-    if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath || err) {
+    if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath) {
 
       data.errors.push({
         "message" : "No git path available"
@@ -506,9 +506,9 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__merge", 0, function (t
           }]
       };
       iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
-        if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath || err) {
+        if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath) {
 
-          iris.message(thisHook.authPass.userid, err, "danger");
+          iris.message(thisHook.authPass.userid, "danger");
           thisHook.fail(data);
 
         }
@@ -589,7 +589,7 @@ iris.modules.irisjsEditor.registerHook("hook_form_submit__merge", 0, function (t
     }]
   };
   iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
-    if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath || err) {
+    if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath) {
 
       data.errors.push({
         "message": "No git path available"
@@ -674,7 +674,7 @@ iris.modules.irisjsEditor.registerHook("hook_form_submit__fetchAll", 0, function
       }]
     };
     iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
-      if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath || err) {
+      if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath) {
 
       }
       else {
@@ -773,7 +773,7 @@ iris.modules.irisjsEditor.registerHook("hook_form_submit__push", 0, function (th
       }]
     };
     iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
-      if (docs.length == 0 || !docs[0].git || !docs[0].git[0].gitpath || err) {
+      if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath) {
 
       data.errors.push({
         "message" : "No git path available"

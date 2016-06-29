@@ -147,107 +147,128 @@ iris.route.get("/irisjs-editor/editor", routes.editor, function (req, res) {
         value: req.authPass.userid
       }]
   };
-    
+  
   iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
-
-    if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath) {
-                 
-      cloneRepo();
-      return;
-
+    
+    
+    if(req.query.operation)  {
+      
+      switch(req.query.operation){
+        case "create_node" : 
+          if(req.query.type == "file"){
+            fs.writeFile(docs[0].git[0].gitpath + "/" + req.query.id, "", function(err) {
+              if(err) {
+                  console.log(err);
+              } else {
+                 res.json(req.query);
+              }
+            }); 
+          }
+          if(req.query.type == "default"){
+            fs.mkdir(docs[0].git[0].gitpath + "/" + req.query.id,function(e){
+                
+                if(!e || (e && e.code === 'EEXIST')){
+                    res.json(req.query);
+                } else {
+                    //debug
+                   res.json({error:e});
+                }
+            });
+          }
+          break;
+        case "delete_node" : 
+          
+          var deleteFolderRecursive = function(path) {
+            if( fs.existsSync(path) ) {
+              fs.readdirSync(path).forEach(function(file,index){
+                var curPath = path + "/" + file;
+                if(fs.lstatSync(curPath).isDirectory()) { // recurse
+                  deleteFolderRecursive(curPath);
+                } else { // delete file
+                  fs.unlinkSync(curPath);
+                }
+              });
+              fs.rmdirSync(path);
+            }
+          };
+          var err = deleteFolderRecursive(docs[0].git[0].gitpath + "/" +req.query.id);
+          if(err) {
+            res.json({error:err});
+          }
+          else{
+            res.json(req.query);
+          }
+           
+          break;
+        case "rename_node" : 
+          var old_path = docs[0].git[0].gitpath + "/" + req.query.id.replace(req.query.text,req.query.old);
+          var new_path = docs[0].git[0].gitpath + "/" + req.query.id;
+          
+          fs.rename(old_path,new_path,function(err){
+            
+              if(err) {
+                res.json({error:err});
+              }
+             else{
+               res.json(req.query);
+             }
+          });
+          break;
+        
+      }
+       
     }
-    else {
-
-      var path = docs[0].git[0].gitpath;
-
-      // Check filesystem exists
-      try {
-        fs.accessSync(path, fs.F_OK);
-      } catch (e) {
+    else{
+      
+      if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath) {
+                   
         cloneRepo();
         return;
+  
       }
-
-        nodegit.Repository.open(path).then(function (repo) {
-
-          var tree = iris.modules.irisjsEditor.globals.getFilesRecursive(path, repo, path);
-
-          iris.modules.frontend.globals.parseTemplateFile(["fileBrowser"], ['html'], {
-            'current': req.irisRoute.options,
-            'tree': tree,
-          }, req.authPass, req).then(function (success) {
-
-            res.send(success);
-
-          }, function (fail) {
-
-            iris.modules.frontend.globals.displayErrorPage(500, req, res);
-
+      else {
+  
+        var path = docs[0].git[0].gitpath;
+         
+        // Check filesystem exists
+        try {
+          fs.accessSync(path, fs.F_OK);
+        } catch (e) {
+          cloneRepo();
+          return;
+        }
+  
+          nodegit.Repository.open(path).then(function (repo) {
+  
+            var tree = iris.modules.irisjsEditor.globals.getFilesRecursive(path, repo, path);
+  
+            iris.modules.frontend.globals.parseTemplateFile(["fileBrowser"], ['html'], {
+              'current': req.irisRoute.options,
+              'tree': tree,
+            }, req.authPass, req).then(function (success) {
+  
+              res.send(success);
+  
+            }, function (fail) {
+  
+              iris.modules.frontend.globals.displayErrorPage(500, req, res);
+  
+              iris.log("error", fail);
+  
+            });
+  
+          }, function(fail) {
+  
             iris.log("error", fail);
-
+  
           });
-
-        }, function(fail) {
-
-          iris.log("error", fail);
-
-        });
-
-
+  
+  
+      }
     }
   });
+
   
-  // iris.dbCollections['user'].find({'eid': req.authPass.userid}).exec(function (err, docs) {
-
-  //   if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
-
-  //     cloneRepo();
-  //     return;
-
-  //   }
-  //   else {
-
-  //     var path = docs[0].git[0].gitpath;
-
-  //     // Check filesystem exists
-  //     try {
-  //       fs.accessSync(path, fs.F_OK);
-  //     } catch (e) {
-  //       cloneRepo();
-  //       return;
-  //     }
-
-  //       nodegit.Repository.open(path).then(function (repo) {
-
-  //         var tree = iris.modules.irisjsEditor.globals.getFilesRecursive(path, repo, path);
-
-  //         iris.modules.frontend.globals.parseTemplateFile(["fileBrowser"], ['html'], {
-  //           'current': req.irisRoute.options,
-  //           'tree': tree,
-  //         }, req.authPass, req).then(function (success) {
-
-  //           res.send(success);
-
-  //         }, function (fail) {
-
-  //           iris.modules.frontend.globals.displayErrorPage(500, req, res);
-
-  //           iris.log("error", fail);
-
-  //         });
-
-  //       }, function(fail) {
-
-  //         iris.log("error", fail);
-
-  //       });
-
-
-  //   }
-
-  // });
-
-
 });
 
 iris.route.get("/irisjs-editor/checkout-branch/:target", {}, function (req, res) {
@@ -314,19 +335,6 @@ iris.modules.irisjsEditor.globals.checkoutBranch = function (params, req, callba
       }
     });
     
-    // iris.dbCollections['user'].find({'eid': req.authPass.userid}).exec(function (err, docs) {
-
-    //   if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
-
-    //     callback(false, 'no gitpath');
-
-    //   }
-    //   else {
-
-    //     iris.modules.irisjsEditor.globals.executeCheckoutBranch(docs[0].git[0].gitpath, params, callback);
-
-    //   }
-    // });
   }
 }
 
@@ -544,7 +552,7 @@ iris.modules.frontend.registerHook("hook_frontend_embed__currentBranch", 0, func
         queries: [{
           field: 'eid',
           operator: 'IS',
-          value: req.authPass.userid
+          value: thisHook.authPass.userid
         }]
     };
                      
@@ -562,20 +570,7 @@ iris.modules.frontend.registerHook("hook_frontend_embed__currentBranch", 0, func
 
       }
     });
-    // iris.dbCollections['user'].find({'eid': thisHook.authPass.userid}).exec(function (err, docs) {
 
-    //   if (docs.length == 0 || !docs[0].git[0].gitpath || err) {
-
-    //     iris.message(thisHook.authPass.userid, "No git path available", "danger");
-    //     thisHook.pass('');
-
-    //   }
-    //   else {
-
-    //     iris.modules.irisjsEditor.globals.getCurrentBranch(docs[0].git[0].gitpath, thisHook, data);
-
-    //   }
-    // });
 
   }
 
@@ -781,69 +776,3 @@ process.on("dbReady", function(){
   }
 
 });
-// iris.modules.irisjsEditor.registerHook("hook_restart_receive", 0, function (thisHook, data) {
-
-//   if (data.enabledModules && data.enabledModules.indexOf('irisjsEditor') > -1) {
-
-//     // Fetch current schema
-//     var schema = JSON.parse(JSON.stringify(iris.dbSchemaConfig['user']));
-
-//     if (Object.keys(schema.fields).indexOf('git') <= 0) {
-
-//       schema.fields.git = {
-//         "description": "", //TODO: Add description to field
-//         "fieldType": "Fieldset",
-//         "label": "Git",
-//         "permissions": [],
-//         "unique": false,
-//         "subfields": {
-//           "gitpath": {
-//             "description": "Path to the respository of this git project",
-//             "fieldType": "Textfield",
-//             "label": "Git path",
-//             "machineName": "gitpath",
-//             "permissions": [],
-//             "required": false,
-//             "unique": false
-//           },
-//           "signature_email": {
-//             "description": "Email used for signing commits",
-//             "fieldType": "Textfield",
-//             "label": "Signture email",
-//             "machineName": "signature_email",
-//             "permissions": [],
-//             "required": false,
-//             "unique": false
-//           },
-//           "signature_name": {
-//             "description": "Username used for signing commits",
-//             "fieldType": "Textfield",
-//             "label": "Signature name",
-//             "machineName": "signature_name",
-//             "permissions": [],
-//             "required": false,
-//             "unique": false
-//           }
-//         }
-//       }
-
-//       // Save updated schema.
-//       iris.saveConfig(schema, "entity", 'user', function (data) {
-
-//         iris.dbPopulate();
-//         iris.message(thisHook.authPass.userid, thisHook.authPass.t("Added git fields to user entity"), "success");
-//         thisHook.pass(data);
-
-//       });
-
-//     }
-//     else {
-//       thisHook.pass(data);
-//     }
-
-//   }
-//   else {
-//     thisHook.pass(data);
-//   }
-
-// });
