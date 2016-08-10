@@ -41,7 +41,7 @@
     "name": "cityweb.adam"
   },
   "dependencies": {
-    "nodegit": "^0.12.2"
+    "nodegit": "^0.14.1"
   },
   "description": "Online version-controlled IDE code editing for IrisJS",
   "devDependencies": {},
