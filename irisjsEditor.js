@@ -548,13 +548,6 @@ iris.modules.irisjsEditor.globals.getFilesRecursiveFlat = function(folder, repo,
 
 iris.modules.frontend.registerHook("hook_frontend_embed__currentBranch", 0, function (thisHook, data) {
 
-  if (thisHook.context.embedOptions.target == 'live') {
-
-    iris.modules.irisjsEditor.globals.getCurrentBranch(iris.sitePath, thisHook, data);
-
-  }
-  else {
-
     var userQuery = {
       entities: ['user'],
         queries: [{
@@ -579,8 +572,6 @@ iris.modules.frontend.registerHook("hook_frontend_embed__currentBranch", 0, func
       }
     });
 
-
-  }
 
 });
 
