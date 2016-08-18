@@ -590,7 +590,12 @@ iris.modules.irisjsEditor.globals.getCurrentBranch = function(path, thisHook, da
       }
       thisHook.pass(branch);
 
-    });
+    }).catch(function (err) {
+
+    iris.message(thisHook.authPass.userid, err, "danger");
+    thisHook.pass('');
+
+  });
 
   }).catch(function (err) {
 
