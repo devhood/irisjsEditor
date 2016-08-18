@@ -249,7 +249,12 @@ iris.modules.irisjsEditor.globals.chooseBranchForm = function(path, thisHook, da
 
       });
 
-    });
+    }).catch(function (err) {
+
+    iris.message(thisHook.authPass.userid, err, "danger");
+    thisHook.fail(data);
+
+  });
 
   }).catch(function (err) {
 
