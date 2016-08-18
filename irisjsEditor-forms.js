@@ -317,8 +317,6 @@ iris.modules.irisjsEditor.globals.cloneForm = function(data, remote) {
 
 iris.modules.irisjsEditor.registerHook("hook_form_render__cloneRepo", 0, function (thisHook, data) {
 
-  var path = iris.sitePath;
-
   var userQuery = {
     entities: ['user'],
       queries: [{
@@ -330,13 +328,10 @@ iris.modules.irisjsEditor.registerHook("hook_form_render__cloneRepo", 0, functio
         
   iris.invokeHook("hook_entity_fetch", "root", null, userQuery).then(function (docs) {
     
-    nodegit.Repository.open(path).then(function (repo) {
+    nodegit.Repository.open(docs[0].git[0].gitpath).then(function (repo) {
       
       repo.getRemote('origin', function () {}).then(function (remote) {
-        // Use remote
 
-
-  
         iris.modules.irisjsEditor.globals.cloneForm(data, remote);
 
         if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].signature_name || !docs[0].git[0].signature_email) {

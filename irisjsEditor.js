@@ -106,12 +106,10 @@ iris.route.get("/irisjs-editor/merge/:target", routes.deploy, function (req, res
  */
 iris.route.get("/irisjs-editor/editor", routes.editor, function (req, res) {
 
-  var cloneRepo = function() {
-
-    var path = iris.sitePath;
+  var cloneRepo = function(path) {
     
     nodegit.Repository.open(path).then(function (repo) {
-
+      console.log("=======",repo);
       repo.getRemote('origin', function () {}).then(function (remote) {
 
         var url = remote.url();
@@ -120,7 +118,7 @@ iris.route.get("/irisjs-editor/editor", routes.editor, function (req, res) {
           'current': req.irisRoute.options,
           'url' : url
         }, req.authPass, req).then(function (success) {
-
+          console.log("successs",success);
           res.send(success);
 
         }, function (fail) {
@@ -133,7 +131,7 @@ iris.route.get("/irisjs-editor/editor", routes.editor, function (req, res) {
 
       });
     },function(err){
-        
+       iris.modules.frontend.globals.displayErrorPage(500, req, res);
        iris.log("error", err);
     });
 
@@ -220,9 +218,11 @@ iris.route.get("/irisjs-editor/editor", routes.editor, function (req, res) {
     }
     else{
       
-      if (docs.length == 0 || !docs[0].git[0] || !docs[0].git[0].gitpath) {
+      if (docs.length == 0 || !docs[0].git || !docs[0].git[0] || !docs[0].git[0].gitpath) {
                    
-        cloneRepo();
+        iris.message(req.authPass.userid, "Git path is not setup yet, you may try to navigate here to check again <a href='/irisjs-editor/editor'>editor<a/>", 'info');
+        //cloneRepo();
+        res.redirect('/admin');
         return;
   
       }
@@ -234,34 +234,42 @@ iris.route.get("/irisjs-editor/editor", routes.editor, function (req, res) {
         try {
           fs.accessSync(path, fs.F_OK);
         } catch (e) {
-          cloneRepo();
+          iris.message(req.authPass.userid, "Git path is not setup yet, you may try to navigate here to check again <a href='/irisjs-editor/editor'>editor<a/>", 'info');
+         // cloneRepo(path);
+          res.redirect('/admin');
           return;
         }
-  
-          nodegit.Repository.open(path).then(function (repo) {
-  
-            var tree = iris.modules.irisjsEditor.globals.getFilesRecursive(path, repo, path);
-  
-            iris.modules.frontend.globals.parseTemplateFile(["fileBrowser"], ['html'], {
-              'current': req.irisRoute.options,
-              'tree': tree,
-            }, req.authPass, req).then(function (success) {
-  
-              res.send(success);
-  
-            }, function (fail) {
-  
-              iris.modules.frontend.globals.displayErrorPage(500, req, res);
-  
+          if(!docs[0].git[0].signature_name && !docs[0].git[0].signature_name){
+            console.log("chitossssssssssss");
+            cloneRepo(path);
+            return;
+          }
+          else{
+            nodegit.Repository.open(path).then(function (repo) {
+    
+              var tree = iris.modules.irisjsEditor.globals.getFilesRecursive(path, repo, path);
+    
+              iris.modules.frontend.globals.parseTemplateFile(["fileBrowser"], ['html'], {
+                'current': req.irisRoute.options,
+                'tree': tree,
+              }, req.authPass, req).then(function (success) {
+    
+                res.send(success);
+    
+              }, function (fail) {
+    
+                iris.modules.frontend.globals.displayErrorPage(500, req, res);
+    
+                iris.log("error", fail);
+    
+              });
+    
+            }, function(fail) {
+    
               iris.log("error", fail);
-  
+    
             });
-  
-          }, function(fail) {
-  
-            iris.log("error", fail);
-  
-          });
+          }
   
   
       }
