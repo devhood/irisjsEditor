@@ -118,7 +118,6 @@ iris.route.get("/irisjs-editor/editor", routes.editor, function (req, res) {
           'current': req.irisRoute.options,
           'url' : url
         }, req.authPass, req).then(function (success) {
-          console.log("successs",success);
           res.send(success);
 
         }, function (fail) {
